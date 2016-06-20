@@ -120,8 +120,8 @@ while True:
         time.sleep(60)
     except KeyboardInterrupt:
         print("Bye")
-		Fan1.FanOff()
-		Fan2.FanOff()
-		Fan1Thread.stop()
-		Fan2Thread.stop()
+        Fan1.FanOff()
+        Fan2.FanOff()
+        Fan1Thread.stop()
+        Fan2Thread.stop()
         sys.exit()
