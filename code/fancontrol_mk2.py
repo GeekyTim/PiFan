@@ -26,20 +26,24 @@ W1BaseDir = '/sys/bus/w1/devices/'
 # Fan 1 - the black one
 Fan1Relay = 24
 Fan1OnTemp = 25
+Fan1OffTemp = 22
 Fan1W1ThermometerID = '28-0000065d1fa2'
-Fan1CheckFrequency = 10
+Fan1CheckFrequency = 30
 
 # Fan 2 - the red one
 Fan2Relay = 25
 Fan2OnTemp = 25
+Fan2OffTemp = 22
 Fan2W1ThermometerID = '28-0004340e0eff'
-Fan2CheckFrequency = 10
+Fan2CheckFrequency = 30
 
 class FanControl:
-    def __init__(self, FanRelay, FanOnTemp, FanW1ThermometerID, FanCheckFrequency):
+    def __init__(self, FanRelay, FanOnTemp, FanOffTemp, FanW1ThermometerID, FanCheckFrequency):
         self.__FanRelay = FanRelay
-        self.__FanOnTemp = Fan1OnTemp
+        self.__FanOnTemp = FanOnTemp
+        self.__FanOffTemp = FanOffTemp
         self.__FanW1DeviceFile = W1BaseDir + FanW1ThermometerID + '/w1_slave'
+        self.__FanCheckFrequency = FanCheckFrequency
         GPIO.setup(FanRelay, GPIO.OUT)
         self.FanOff()
 
@@ -57,10 +61,10 @@ class FanControl:
 
             if (__tempnow >= self.__FanOnTemp):
                 self.FanOn()
-            else:
+            elif (__tempnow <= self.__FanOffTemp):
                 self.FanOff()
 
-            time.sleep(10)
+            time.sleep(self.__FanCheckFrequency)
 
     # A function that reads the sensors data
     def ReadRawTemperature(self):
@@ -72,7 +76,7 @@ class FanControl:
     # Convert the value of the sensor into a temperature
     def ReadRealTemperature(self):
         __lines = self.ReadRawTemperature() # Read the temperature 'device file'
-
+        print(__lines)
         # While the first line does not contain 'YES', wait for 0.2s
         # and then read the device file again.
         while __lines[0].strip()[-3:] != 'YES':
@@ -97,8 +101,8 @@ class FanControl:
         GPIO.output(self.__FanRelay, GPIO.LOW)
 
 # Create instances
-Fan1 = FanControl(Fan1Relay, Fan1OnTemp, Fan1W1ThermometerID, Fan1CheckFrequency)
-Fan2 = FanControl(Fan2Relay, Fan2OnTemp, Fan2W1ThermometerID, Fan2CheckFrequency)
+Fan1 = FanControl(Fan1Relay, Fan1OnTemp, Fan1OffTemp, Fan1W1ThermometerID, Fan1CheckFrequency)
+Fan2 = FanControl(Fan2Relay, Fan2OnTemp, Fan2OffTemp, Fan2W1ThermometerID, Fan2CheckFrequency)
 
 # Create the threads
 Fan1Thread = threading.Thread(target=Fan1.FanControlThread, args=())
