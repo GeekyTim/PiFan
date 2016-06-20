@@ -23,45 +23,39 @@ W1BaseDir = '/sys/bus/w1/devices/'
 # FanXW1ThermometerID is the 1-Wire device directory for the thermometer
 # FanXW1DeviceFile is the device file that will be read to get the temperature
 
-# Fan 1
+# Fan 1 - the black one
 Fan1Relay = 24
 Fan1OnTemp = 25
-Fan1W1ThermometerID = '28-'
+Fan1W1ThermometerID = '28-0000065d1fa2'
 Fan1CheckFrequency = 10
 
-Fan1W1DeviceFile = W1BaseDir + Fan1W1ThermometerID + '/w1_slave'
-
-
-# Fan 2
+# Fan 2 - the red one
 Fan2Relay = 25
 Fan2OnTemp = 25
-Fan2W1ThermometerID = '28-'
+Fan2W1ThermometerID = '28-0004340e0eff'
 Fan2CheckFrequency = 10
 
-Fan2W1DeviceFile = W2BaseDir + Fan2W1ThermometerID + '/w1_slave'
-GPIO.setup(Fan2Relay, GPIO.OUT)
-
 class FanControl:
-    def __init__(self, FanRelay, FanOnTemp, FanW1ThermometerID, FanCheckFrequency)
+    def __init__(self, FanRelay, FanOnTemp, FanW1ThermometerID, FanCheckFrequency):
         self.__FanRelay = FanRelay
         self.__FanOnTemp = Fan1OnTemp
-        self.__FanW1DeviceFile = W1BaseDir + Fan1W1ThermometerID + '/w1_slave'
+        self.__FanW1DeviceFile = W1BaseDir + FanW1ThermometerID + '/w1_slave'
         GPIO.setup(FanRelay, GPIO.OUT)
         self.FanOff()
 
         # 'Hello world' - check the fans run
-        for x in range(0, 3):
+        for x in range(0, 1):
             self.FanOn()
             time.sleep(1)
             self.FanOff()
             time.sleep(1)
 
     # Monitor the temperature of the thermometer and turn the fan on if it gets too hot
-    def FanControlThread()
+    def FanControlThread(self):
         while (True):
-            tempnow = self.ReadRealTemperature()
+            __tempnow = self.ReadRealTemperature()
 
-            if (tempnow >= FanOnTemp):
+            if (__tempnow >= self.__FanOnTemp):
                 self.FanOn()
             else:
                 self.FanOff()
@@ -69,37 +63,37 @@ class FanControl:
             time.sleep(10)
 
     # A function that reads the sensors data
-    def ReadRawTemperature():
-        f = open(self.__FanW1DeviceFile, 'r') # Opens the temperature device file
-        lines = f.readlines() # Returns the text
-        f.close()
-        return lines
+    def ReadRawTemperature(self):
+        __W1DeviceFile = open(self.__FanW1DeviceFile, 'r') # Opens the temperature device file
+        __lines = __W1DeviceFile.readlines() # Returns the text
+        __W1DeviceFile.close()
+        return __lines
 
     # Convert the value of the sensor into a temperature
-    def ReadRealTemperature():
-        lines = self.ReadRawTemperature() # Read the temperature 'device file'
+    def ReadRealTemperature(self):
+        __lines = self.ReadRawTemperature() # Read the temperature 'device file'
 
         # While the first line does not contain 'YES', wait for 0.2s
         # and then read the device file again.
-        while lines[0].strip()[-3:] != 'YES':
+        while __lines[0].strip()[-3:] != 'YES':
             time.sleep(0.2)
-            lines = self.ReadRawTemperature()
+            __lines = self.ReadRawTemperature()
 
         # Look for the position of the '=' in the second line of the
         # device file.
-        equals_pos = lines[1].find('t=')
+        __equals_pos = __lines[1].find('t=')
 
         # If the '=' is found, convert the rest of the line after the
         # '=' into degrees Celsius, then degrees Fahrenheit
-        if equals_pos != -1:
-            temp_string = lines[1][equals_pos+2:]
-            temp_c = float(temp_string) / 1000.0
-            return temp_c
+        if __equals_pos != -1:
+            __temp_string = __lines[1][__equals_pos+2:]
+            __temp_c = float(__temp_string) / 1000.0
+            return __temp_c
 
-    def FanOn():
+    def FanOn(self):
         GPIO.output(self.__FanRelay, GPIO.HIGH)
 
-    def FanOff():
+    def FanOff(self):
         GPIO.output(self.__FanRelay, GPIO.LOW)
 
 # Create instances
@@ -122,6 +116,4 @@ while True:
         print("Bye")
         Fan1.FanOff()
         Fan2.FanOff()
-        Fan1Thread.stop()
-        Fan2Thread.stop()
-        sys.exit()
+        exit()
