@@ -7,11 +7,18 @@ import time              # So we can sleep
 import RPi.GPIO as GPIO  # The GPIO library
 import threading         # We're using threading - a bit OTT for this, but why not!
 import logging           # So we can log to a file
+import logging.handlers
 
-logging.basicConfig(filename='fan.log', format='%(levelname)s:%(asctime)s:%(funcName)s:%(lineno)d: %(message)s',
-                    level=logging.INFO)
+# fan_logger = logging.basicConfig(filename='fan.log', format='%(levelname)s:%(asctime)s:%(funcName)s:%(lineno)d: %(message)s',level=logging.INFO)
+fan_logger = logging.getLogger('MyLogger')
+fan_logger.setLevel(logging.INFO)
 
-logging.info('Starting by defining variables and dictionaries')
+handler = logging.handlers.RotatingFileHandler('fan.log', maxBytes=5120, backupCount=5)
+fan_logger.addHandler(handler)
+
+# Add the log message handler to the logger
+
+fan_logger.info('Starting by defining variables and dictionaries')
 
 # Initialize the GPIO Pins for 1-Wire
 os.system('modprobe w1-gpio')  # Turns on the GPIO module
@@ -57,7 +64,7 @@ class FanControl:
         self.FanOff()
         self.__FanState = False # Off
 
-        logging.info(self.__FanID + ' state %s' % self.__FanState)
+        fan_logger.info(self.__FanID + ' state %s' % self.__FanState)
 
         # 'Hello world' - check the fans run
         for x in range(0, 1):
@@ -66,14 +73,14 @@ class FanControl:
             self.FanOff()
             time.sleep(1)
 
-        logging.info(self.__FanID+' Setup')
+        fan_logger.info(self.__FanID+' Setup')
 
     # Monitor the temperature of the thermometer and turn the fan on if it gets too hot
     def FanControlThread(self):
         while (True):
             __tempnow = self.ReadRealTemperature()
-            logging.info(self.__FanID + ' temperature ' + "{:.1f}".format(__tempnow))
-            logging.info(self.__FanID + ' state %s' % self.__FanState)
+            fan_logger.info(self.__FanID + ' temperature ' + "{:.1f}".format(__tempnow))
+            fan_logger.info(self.__FanID + ' state %s' % self.__FanState)
 
             if (not(self.__FanState) and __tempnow >= self.__FanOnTemp):
                 self.FanOn()
@@ -112,12 +119,12 @@ class FanControl:
 
     def FanOn(self):
         GPIO.output(self.__FanRelay, GPIO.HIGH)
-        logging.info(self.__FanID + ' On')
+        fan_logger.info(self.__FanID + ' On')
         self.__FanState = True
 
     def FanOff(self):
         GPIO.output(self.__FanRelay, GPIO.LOW)
-        logging.info(self.__FanID + ' Off')
+        fan_logger.info(self.__FanID + ' Off')
         self.__FanState = False
 
 # Create instances
